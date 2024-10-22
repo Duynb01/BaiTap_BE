@@ -1,0 +1,12 @@
+version: '3.8'
+
+services:
+  api:
+    container_name: nodejsD63EX
+    image: node:20.18.0
+    working_dir: /app/nodejsD63EX
+    volumes:
+      - './nodejsD63EX:/app/nodejsD63EX'
+    ports:
+      - '3000:3000'
+    command: [ "npx", "nodemon", "--legacy-watch", "index.js" ]

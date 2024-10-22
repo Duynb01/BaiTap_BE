@@ -1,0 +1,26 @@
+version: '3.8'
+
+services:
+  api:
+    container_name: nodejsD64EX
+    image: node:20.18.0
+    working_dir: /app/nodejsD64EX
+    volumes:
+      - './nodejsD64EX:/app/nodejsD64EX'
+    ports:
+      - '3000:3000'
+    command: [ "npx", "nodemon", "--legacy-watch", "index.js" ]
+  db:
+    container_name: nodejsD64-db
+    image: postgres:17.0
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=default
+    ports:
+      - '4000:5432'
+    volumes:
+      - './db:/var/lib/postgresql/data'
+volumes:
+  db:
+    driver: local
