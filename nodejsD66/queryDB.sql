@@ -1,80 +1,80 @@
 -- Create Table
 
 create table if not exists subject(
-                                      id bigserial not null,
-                                      name text not null ,
-                                      created_at timestamp with time zone NOT NULL DEFAULT now(),
+    id bigserial not null,
+    name text not null ,
+    created_at timestamp with time zone NOT NULL DEFAULT now(),
     created_by bigint,
     modified_at timestamp with time zone,
     modified_by bigint,
     deleted_at timestamp with time zone,
-                             deleted_by bigint,
-                             active boolean default TRUE,
-                             constraint pk_subject primary key (id)
-    );
+    deleted_by bigint,
+    active boolean default TRUE,
+    constraint pk_subject primary key (id)
+);
 create table if not exists student(
-                                      id bigserial not null,
-                                      name text not null ,
-                                      created_at timestamp with time zone NOT NULL DEFAULT now(),
+    id bigserial not null,
+    name text not null ,
+    created_at timestamp with time zone NOT NULL DEFAULT now(),
     created_by bigint,
     modified_at timestamp with time zone,
     modified_by bigint,
     deleted_at timestamp with time zone,
-                             deleted_by bigint,
-                             active boolean default TRUE,
-                             constraint pk_student primary key (id)
-    );
+    deleted_by bigint,
+    active boolean default TRUE,
+    constraint pk_student primary key (id)
+);
 create table if not exists exam(
-                                   id bigserial not null,
-                                   name text not null ,
-                                   subject_id bigint,
-                                   created_at timestamp with time zone NOT NULL DEFAULT now(),
+    id bigserial not null,
+    name text not null ,
+    subject_id bigint,
+    created_at timestamp with time zone NOT NULL DEFAULT now(),
     created_by bigint,
     modified_at timestamp with time zone,
     modified_by bigint,
     deleted_at timestamp with time zone,
-                             deleted_by bigint,
-                             active boolean default TRUE,
-                             constraint pk_exam primary key (id),
+    deleted_by bigint,
+    active boolean default TRUE,
+    constraint pk_exam primary key (id),
     constraint fk_exam_subject foreign key (subject_id) references subject(id)
-    );
+);
 create table if not exists question(
-                                       id bigserial not null,
-                                       question text not null ,
-                                       correct_answer text,
-                                       exam_id bigint,
-                                       created_at timestamp with time zone NOT NULL DEFAULT now(),
+    id bigserial not null,
+    question text not null ,
+    correct_answer text,
+    exam_id bigint,
+    created_at timestamp with time zone NOT NULL DEFAULT now(),
     created_by bigint,
     modified_at timestamp with time zone,
     modified_by bigint,
     deleted_at timestamp with time zone,
-                             deleted_by bigint,
-                             active boolean default TRUE,
-                             constraint pk_question primary key (id),
+    deleted_by bigint,
+    active boolean default TRUE,
+    constraint pk_question primary key (id),
     constraint fk_question_exam foreign key (exam_id) references exam(id)
-    );
+);
 create table if not exists exam_result(
-                                          id bigserial not null,
-                                          student_id bigint,
-                                          question_id bigint,
-                                          is_correct boolean,
-                                          created_at timestamp with time zone NOT NULL DEFAULT now(),
+    id bigserial not null,
+    student_id bigint,
+    question_id bigint,
+    is_correct boolean,
+    created_at timestamp with time zone NOT NULL DEFAULT now(),
     created_by bigint,
     modified_at timestamp with time zone,
     modified_by bigint,
     deleted_at timestamp with time zone,
-                             deleted_by bigint,
-                             active boolean default TRUE,
-                             constraint pk_examResult primary key (id),
+    deleted_by bigint,
+    active boolean default TRUE,
+    constraint pk_examResult primary key (id),
     constraint fk_examResult_student foreign key (student_id) references student(id),
     constraint fk_examResult_question foreign key (question_id) references question(id)
-    );
+);
 create table if not exists subject_student(
-                                              student_id bigint,
-                                              subject_id bigint,
-                                              constraint fk_subjectStudent_student foreign key (student_id) references student(id),
+    student_id bigint,
+    subject_id bigint,
+    constraint fk_subjectStudent_student foreign key (student_id) references student(id),
     constraint fk_subjectStudent_subject foreign key (subject_id) references subject(id)
-    );
+);
 
 -- Add tạm dữ liệu
 
@@ -143,17 +143,17 @@ with
     details as(
         select question.exam_id as ques_id, json_agg(json_build_object('id', question.id, 'name', question.question, 'is_correct', exam_result.is_correct)) as detail
         from question
-                 join exam_result on question.id = exam_result.question_id
-                 join exam on question.exam_id = exam.id
-                 join student on exam_result.student_id = student.id
+        join exam_result on question.id = exam_result.question_id
+        join exam on question.exam_id = exam.id
+        join student on exam_result.student_id = student.id
         group by question.exam_id
     ),
     quantity as (
         select student.name , exam.name as exam_name, count(case when exam_result.is_correct then 1 end ) as quantity
         from  student
-                  join exam_result on student.id = exam_result.student_id
-                  join question on exam_result.question_id = question.id
-                  join exam on exam.id = question.exam_id
+        join exam_result on student.id = exam_result.student_id
+        join question on exam_result.question_id = question.id
+        join exam on exam.id = question.exam_id
         where exam_result.is_correct
         group by student.name, exam.name),
     exams as (
@@ -164,14 +164,14 @@ with
                                            'total_question', (select count(question.question) from question where question.exam_id = exam.id),
                                            'details', details.detail)) as exam_detail
         from exam
-                 join quantity on quantity.exam_name = exam.name
-                 join details on details.ques_id = exam.id
+        join quantity on quantity.exam_name = exam.name
+        join details on details.ques_id = exam.id
         group by exam.id, exam.name)
 select subject.id, subject.name, json_agg(json_build_object('id', student.id, 'name', student.name, 'exams', exams.exam_detail)) as students
 from subject
-         left join subject_student  on subject.id = subject_student.subject_id
-         left join student on subject_student.student_id = student.id
-         left join exams on exams.subject_id = subject.id
+left join subject_student  on subject.id = subject_student.subject_id
+left join student on subject_student.student_id = student.id
+left join exams on exams.subject_id = subject.id
 where subject.id = subject_student.subject_id and subject_student.student_id = student.id
 group by subject.id, subject.name
 order by id;
